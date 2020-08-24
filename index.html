@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: 0.5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { position:fixed; top:35px; right:35px; text-align:right; list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+
+      #buzzer { position:fixed; transition:all 1s ease; left:50%; top:50%; width:300px; height:300px; border-radius:100%; background:green; transform:translateX(-50%) translateY(-50%); }
+      #buzzer.pressed { background:grey; }
+
+      #reset { position:fixed; top:35px; left:50%; transform:translateX(-50%); width:50px; height:50px; background-image:url("reset.svg"); background-position:50% 50%; background-size:80% 80%; } 
+
+    </style>
+  </head>
+  <body>
+
+    <div id="buzzer"></div>
+
+    <div id="reset"></div>
+
+    <div id="ladder"></div>
+
+    <ul id="messages"></ul>
+    <form action="">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script>
+
+    var socket = io();
+
+    var buzzes = [];
+
+        $(function () {
+          
+          $('form').submit(function(e){
+            e.preventDefault(); // prevents page reloading
+            socket.emit('chat message', $('#m').val());
+            $('#m').val('');
+            return false;
+          });
+          socket.on('chat message', function(msg){
+            $('#messages').append($('<li>').text(msg));
+          });
+        });
+
+        socket.on("reset", function() 
+          { 
+            $("#buzzer").removeClass("pressed");
+            $("#ladder").html("");
+          });
+          
+        $(document).on("click", "#reset", function(){
+          socket.emit('reset',true);
+        });
+
+        $(document).on('click', "#buzzer", function(event)
+          {
+          $(this).addClass("pressed");
+          console.log("buzz!");
+          socket.emit('buzzer', 'buzzzzz');
+          });
+
+        socket.on("rank", function(msg) 
+          { 
+          console.log(msg);
+          buzzes = msg;
+          PopulateLadder();
+          });  
+
+        function PopulateLadder(){
+          $("#ladder").html("");
+          $.each(buzzes, function(index, item){
+            $element = '<div class="abuzz">'+item.id+' / '+item.time+'</div>';
+            $("#ladder").append($element);
+          });
+
+          }
+
+      </script>
+
+  </body>
+</html>
